@@ -1,0 +1,17 @@
+version: '3.9'
+
+services:
+# redis DB
+  redis:
+    image: redis  
+    # container_name: 8a580f0ce7e3988b9dcb1a144049f63f06ccce5e1008d97043abceb4cf5eea2a
+    container_name: redis_R
+    ports: # map port
+      - 6379:6379 # นอก: ใน
+    volumes:
+    # เก็บ  data : map กับที่เก็บ data เดิม ภายใน container
+    # ส่วนแรกจะเป็น folder ที่เราสร้างขึ้นใน project : ส่วนนี้เอามาจาก docker
+      - ./data/redis:/data
+      - ./redis_config/redis.conf:/redis.conf
+    command: redis-server /redis.conf
+    # environment: set ค่าบางอย่าง

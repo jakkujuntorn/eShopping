@@ -1,0 +1,8 @@
+kafka:
+  servers:
+    - localhost:9092
+
+redis:
+  redis_addr: localhost:6379
+  redis_key: repostitory::GetProducts
+ 
