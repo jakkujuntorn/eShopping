@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -8,20 +9,27 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-	
+
+	// "go.mongodb.org/mongo-driver/bson"
+	// "go.mongodb.org/mongo-driver/bson/primitive"
+
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type cart_repository struct {
-	db *gorm.DB
+	db    *gorm.DB
+	monGo *mongo.Database
 }
 
 type ICart_Repositiry interface {
 	//******** ไม่ได้ใช้ CreateCart_Repo *********
 	CreateCart_Repo(cartOrder models.CartOrderDB) (cartOrderDB *models.CartOrderDB, err error)
+
 	//********* ไม่ได้ใช้ CreateCartItem_Repo ********
 	CreateCartItem_Repo(cartItem *[]models.CartItemDB) error
 
 	CreateCart_Repo_V2(cartOrder map[int][]models.Product_CartItem, idUser int) error
+
 	CheckStock(idProduct, quantity int, status string) error // ไม่ได้ใช้
 	GetAllCartForUser_Repo(idUser int) (cartOrderDB []models.CartOrderDB, carItemst_User []models.CartItemDB, err error)
 	GetAllCartForStore_Repo(idStore int) (cartOrderDB []models.CartOrderDB, cartItemDB_Struct []models.CartItemDB, err error)
@@ -32,16 +40,84 @@ type ICart_Repositiry interface {
 	EditCartOrder_Repo(cartItemDB []models.CartItemDB) (err error)
 	EditStatusCartOrder_Repo(idCart, idUser int, status *models.StatusCartUpdate) (err error)
 	DeleteCart_Repo(idUser, idcart int) error
+
+	// ***********************  moongo ******************
+	CreateCart_Repo_Mongo(cartOrder map[int][]models.Product_CartItem, idUser int) error
+	EditCartOrder_Repo_Mongo(cartItemDB []models.CartItemDB) (err error)
+	EditStatusCartOrder_Repo_Mongo(idCart, idUser int, status *models.StatusCartUpdate) (err error)
 }
 
-func NewCart_Repo(database *gorm.DB) ICart_Repositiry {
+func NewCart_Repo(database *gorm.DB, monGo *mongo.Database) ICart_Repositiry {
 	return &cart_repository{
-		db: database,
+		db:    database,
+		monGo: monGo,
 	}
 }
 
 var rollBack = make(chan string)
 var commit = make(chan string)
+
+// ****************** Mongo *******************
+// Create cart
+func (cr *cart_repository) CreateCart_Repo_Mongo(cartOrder map[int][]models.Product_CartItem, idUser int) error {
+	ctx := context.Background()
+	// ********** Transaction ************
+	// Start session
+	session, errStart := cr.monGo.Client().StartSession()
+	if errStart != nil {
+		fmt.Println(errStart)
+	}
+
+	session.StartTransaction()
+
+	session.CommitTransaction(ctx)
+
+	errAbortTransaction := session.AbortTransaction(ctx)
+	if errAbortTransaction != nil {
+		fmt.Println(errAbortTransaction)
+	}
+
+	data, WithTransaction := session.WithTransaction(ctx, func(ct mongo.SessionContext) (interface{}, error) {
+		p2 := models.Product{}
+
+		// start
+		err := ct.StartTransaction()
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		//query
+		// if err != nil {
+		// ถ้า error ให้ AbortTransaction
+		// ct.AbortTransaction(ctx)
+		// }
+
+		//commit
+		return p2, ct.CommitTransaction(ctx)
+
+	})
+
+	if WithTransaction != nil {
+		fmt.Println(WithTransaction)
+	}
+
+	fmt.Println(data)
+
+	defer session.EndSession(ctx)
+	//***************
+
+	return nil
+}
+
+//**************** For User ***********
+func (cr *cart_repository) EditCartOrder_Repo_Mongo(cartItemDB []models.CartItemDB) (err error) {
+	return nil
+}
+
+//*************** For Store **************
+func (cr *cart_repository) EditStatusCartOrder_Repo_Mongo(idCart, idUser int, status *models.StatusCartUpdate) (err error) {
+	return nil
+}
 
 // CreateCart_Repo implements ICart_Repositiry
 // การตัด stock ตวร อยู่ตรงนี้ เพราะเป็นจุดแรกที่เริ่มทำงานด้าน  cart
@@ -127,31 +203,36 @@ func (cr *cart_repository) CreateCart_Repo_V2(cartOrder map[int][]models.Product
 	// fmt.Println("********************************")
 	// ร้าน 36 มี 2 สินค้า
 	// ร้าน 22 มี 1 สินค้า
-	// map[22:[{22 22 22 22}] 36:[{36 63 1 18} {36 64 1 18}]]
+
+	// map[
+	//22:[{22 22 22 22}]
+	//36:[{36 63 1 18} {36 64 1 18}]
+	//]
+
 	// fmt.Println(cartOrder)
 	// fmt.Println("*******************************")
 
 	// *********************** ตัด stock *************
-	for idStore, product_InStore := range cartOrder {
-		_ = idStore
-		// 22 กับ 36
-		// fmt.Println(idStore)
-		// fmt.Println(product_InStore)
-		// 	36
-		// [{36 63 1 18} {36 64 1 18}]
-		// 22
-		// [{22 22 22 22}]
-		for i, v := range product_InStore { // เอาไว้แยก product แต่ละตัว
-			fmt.Print(i) //index  ธรรมดา
-			fmt.Print(v) // สินค้า แยกแต่ละ สินค้าเลย
+	// for idStore, product_InStore := range cartOrder {
+	// 	_ = idStore
+	// 	// 22 กับ 36
+	// 	// fmt.Println(idStore)
+	// 	// fmt.Println(product_InStore)
+	// 	// 	36
+	// 	// [{36 63 1 18} {36 64 1 18}]
+	// 	// 22
+	// 	// [{22 22 22 22}]
+	// 	for i, v := range product_InStore { // เอาไว้แยก product แต่ละตัว
+	// 		fmt.Print(i) //index  ธรรมดา
+	// 		fmt.Print(v) // สินค้า แยกแต่ละ สินค้าเลย
 
-			// สินค้าแยกที่ละตัว พร้อมเอาไปตัด stock
-			errStock := cr.CheckStock(v.Id_Product, v.Quantity, "cut")
-			if errStock != nil {
-				return errStock
-			}
-		}
-	}
+	// 		// สินค้าแยกที่ละตัว พร้อมเอาไปตัด stock
+	// 		errStock := cr.CheckStock(v.Id_Product, v.Quantity, "cut")
+	// 		if errStock != nil {
+	// 			return errStock
+	// 		}
+	// 	}
+	// }
 
 	tx := cr.db.Begin()
 	//************* Sent Data toDB ******************
@@ -170,9 +251,16 @@ func (cr *cart_repository) CreateCart_Repo_V2(cartOrder map[int][]models.Product
 		cartItemDB := []models.CartItemDB{}
 		for _, data_CartItem := range product_InStore {
 
+			// การเช็ค stock กับตัด stock
+			errStock := cr.CheckStock(data_CartItem.Id_Product, data_CartItem.Quantity, "cut")
+			if errStock != nil {
+				tx.Rollback()
+				return errStock
+			}
 			// ดึง id เตียมมา map กับ catItem
 			cartOrderforCartItem := models.CartOrderDB{}
-
+			// ดึงค่าสุดท้ายขึ้นมา มันคือ ค่าที่พึ่งใสลงไป
+			// ต้องเอา cart id มา map  กับ cart_items idCart
 			if err := tx.Table("myshop.carts").Last(&cartOrderforCartItem).Error; err != nil {
 				tx.Rollback()
 				return err
@@ -192,15 +280,18 @@ func (cr *cart_repository) CreateCart_Repo_V2(cartOrder map[int][]models.Product
 		}
 
 		if err := tx.Table("myshop.cart_items").Create(&cartItemDB).Error; err != nil {
+			// เปลี่ยน logic ใหม่ ไม่ต้องใช้ตรงนี้แล้ว
 			//******** error ต้องคืนค่า stock ***********
-			for _, product_InStore := range cartOrder {
-				for _, v := range product_InStore { // เอาไว้แยก product แต่ละตัว
-					errStock := cr.CheckStock(v.Id_Product, v.Quantity, "return")
-					if errStock != nil {
-						return errStock
-					}
-				}
-			}
+			// for _, product_InStore := range cartOrder {
+			// 	for _, v := range product_InStore { // เอาไว้แยก product แต่ละตัว
+			// 		errStock := cr.CheckStock(v.Id_Product, v.Quantity, "return")
+			// 		if errStock != nil {
+			// 			return errStock
+			// 		}
+			// 	}
+			// }
+
+			//
 			tx.Rollback()
 			return err
 		}
@@ -221,6 +312,7 @@ func (cr *cart_repository) CheckStock(idProduct, quantity int, status string) er
 			errorText := fmt.Sprintf("%v not enough", product.Title)
 			return errors.New(errorText)
 		}
+
 		//  ตัดยอดตาม quantity
 		product.Quantity = product.Quantity - quantity
 		// save product after cut stock
