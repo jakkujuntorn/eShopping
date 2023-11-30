@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"context"
+	
 	"errors"
 	"fmt"
 
@@ -10,18 +10,22 @@ import (
 
 	"gorm.io/gorm"
 
-	// "go.mongodb.org/mongo-driver/bson"
-	// "go.mongodb.org/mongo-driver/bson/primitive"
+	_ "go.mongodb.org/mongo-driver/bson"
+	_ "go.mongodb.org/mongo-driver/bson/primitive"
 
 	"go.mongodb.org/mongo-driver/mongo"
+	// "go.mongodb.org/mongo-driver/mongo/options"
+	// "go.mongodb.org/mongo-driver/mongo/writeconcern"
 )
 
 type cart_repository struct {
-	db    *gorm.DB
+	mysql    *gorm.DB
 	monGo *mongo.Database
+	postgres *gorm.DB
 }
 
 type ICart_Repositiry interface {
+	// **********************************   mysql  **********************************
 	//******** ไม่ได้ใช้ CreateCart_Repo *********
 	CreateCart_Repo(cartOrder models.CartOrderDB) (cartOrderDB *models.CartOrderDB, err error)
 
@@ -29,14 +33,13 @@ type ICart_Repositiry interface {
 	CreateCartItem_Repo(cartItem *[]models.CartItemDB) error
 
 	CreateCart_Repo_V2(cartOrder map[int][]models.Product_CartItem, idUser int) error
-
 	CheckStock(idProduct, quantity int, status string) error // ไม่ได้ใช้
 	GetAllCartForUser_Repo(idUser int) (cartOrderDB []models.CartOrderDB, carItemst_User []models.CartItemDB, err error)
 	GetAllCartForStore_Repo(idStore int) (cartOrderDB []models.CartOrderDB, cartItemDB_Struct []models.CartItemDB, err error)
-
 	GetCartByIdForUser_Repo(idcart, idUser int) (carItemst_User []models.CartItemDB, err error)
-	GetCartByIdForStore_Repo(idcart, idStore int) (carItemst_Store []models.CartItemDB, err error)
 
+	// อันนี้ต้องแก้เรื่องเวลาด้วย ****
+	GetCartByIdForStore_Repo(idcart, idStore int) (carItemst_Store []models.CartItemDB, err error)
 	EditCartOrder_Repo(cartItemDB []models.CartItemDB) (err error)
 	EditStatusCartOrder_Repo(idCart, idUser int, status *models.StatusCartUpdate) (err error)
 	DeleteCart_Repo(idUser, idcart int) error
@@ -45,86 +48,36 @@ type ICart_Repositiry interface {
 	CreateCart_Repo_Mongo(cartOrder map[int][]models.Product_CartItem, idUser int) error
 	EditCartOrder_Repo_Mongo(cartItemDB []models.CartItemDB) (err error)
 	EditStatusCartOrder_Repo_Mongo(idCart, idUser int, status *models.StatusCartUpdate) (err error)
+
+	// ****************************  Postgres SQL  ***********************************
+	CreateCart_Repo_Postgres(cartOrder map[int][]models.Product_CartItem, idUser int) error
+	EditCartOrder_Repo_Postgres(cartItemDB []models.CartItemDB) (err error)
+	EditStatusCartOrder_Repo_Postgres(idCart, idUser int, status *models.StatusCartUpdate) (err error)
+	GetAllCartForUser_Repo_Postgres(idUser int) (cartOrderDB []models.CartOrderDB, carItemst_User []models.CartItemDB, err error)
+	GetAllCartForStore_Repo_Postgres(idStore int) (cartOrderDB []models.CartOrderDB, cartItemDB_Struct []models.CartItemDB, err error)
+	GetCartByIdForUser_Repo_Postgres(idcart, idUser int) (carItemst_User []models.CartItemDB, err error)
+	GetCartByIdForStore_Repo_Postgres(idcart, idStore int) (carItemst_Store []models.CartItemDB, err error)
 }
 
-func NewCart_Repo(database *gorm.DB, monGo *mongo.Database) ICart_Repositiry {
+func NewCart_Repo(mysql *gorm.DB, monGo *mongo.Database,postgres *gorm.DB) ICart_Repositiry {
 	return &cart_repository{
-		db:    database,
+		mysql:    mysql,
 		monGo: monGo,
+		postgres:postgres,
 	}
 }
 
 var rollBack = make(chan string)
 var commit = make(chan string)
 
-// ****************** Mongo *******************
-// Create cart
-func (cr *cart_repository) CreateCart_Repo_Mongo(cartOrder map[int][]models.Product_CartItem, idUser int) error {
-	ctx := context.Background()
-	// ********** Transaction ************
-	// Start session
-	session, errStart := cr.monGo.Client().StartSession()
-	if errStart != nil {
-		fmt.Println(errStart)
-	}
 
-	session.StartTransaction()
-
-	session.CommitTransaction(ctx)
-
-	errAbortTransaction := session.AbortTransaction(ctx)
-	if errAbortTransaction != nil {
-		fmt.Println(errAbortTransaction)
-	}
-
-	data, WithTransaction := session.WithTransaction(ctx, func(ct mongo.SessionContext) (interface{}, error) {
-		p2 := models.Product{}
-
-		// start
-		err := ct.StartTransaction()
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		//query
-		// if err != nil {
-		// ถ้า error ให้ AbortTransaction
-		// ct.AbortTransaction(ctx)
-		// }
-
-		//commit
-		return p2, ct.CommitTransaction(ctx)
-
-	})
-
-	if WithTransaction != nil {
-		fmt.Println(WithTransaction)
-	}
-
-	fmt.Println(data)
-
-	defer session.EndSession(ctx)
-	//***************
-
-	return nil
-}
-
-//**************** For User ***********
-func (cr *cart_repository) EditCartOrder_Repo_Mongo(cartItemDB []models.CartItemDB) (err error) {
-	return nil
-}
-
-//*************** For Store **************
-func (cr *cart_repository) EditStatusCartOrder_Repo_Mongo(idCart, idUser int, status *models.StatusCartUpdate) (err error) {
-	return nil
-}
 
 // CreateCart_Repo implements ICart_Repositiry
 // การตัด stock ตวร อยู่ตรงนี้ เพราะเป็นจุดแรกที่เริ่มทำงานด้าน  cart
 func (cr *cart_repository) CreateCart_Repo(cart models.CartOrderDB) (cartOrder *models.CartOrderDB, err error) {
 	// create Cart
 
-	tx := cr.db.Begin()
+	tx := cr.mysql.Begin()
 
 	tx.Table("myshop.carts").Create(&cart)
 	if tx.Error != nil {
@@ -159,7 +112,7 @@ func (cr *cart_repository) CreateCartItem_Repo(cartItems *[]models.CartItemDB) e
 	// ดึงค่าตาม id product
 	product := models.Product{}
 	for _, v := range *cartItems {
-		tx := cr.db.Table("myshop.products").Where("id_product=?", v.Id_Product).Find(&product)
+		tx := cr.mysql.Table("myshop.products").Where("id_product=?", v.Id_Product).Find(&product)
 		if tx.Error != nil {
 			rollBack <- "rollback"
 			return tx.Error
@@ -177,7 +130,7 @@ func (cr *cart_repository) CreateCartItem_Repo(cartItems *[]models.CartItemDB) e
 
 		// fmt.Println(product)
 		// save product after cut stock
-		tx = cr.db.Table("myshop.products").Where("id_product=?", product.IdProduct).Updates(&product)
+		tx = cr.mysql.Table("myshop.products").Where("id_product=?", product.IdProduct).Updates(&product)
 		if tx.Error != nil {
 			rollBack <- "rollback"
 			return errors.New("can not update prpduct after cut stock")
@@ -185,7 +138,7 @@ func (cr *cart_repository) CreateCartItem_Repo(cartItems *[]models.CartItemDB) e
 	}
 
 	// create cart_items
-	tx := cr.db.Table("myshop.cart_items").Create(&cartItems)
+	tx := cr.mysql.Table("myshop.cart_items").Create(&cartItems)
 	if tx.Error != nil {
 		rollBack <- "rollback"
 		return tx.Error
@@ -234,7 +187,7 @@ func (cr *cart_repository) CreateCart_Repo_V2(cartOrder map[int][]models.Product
 	// 	}
 	// }
 
-	tx := cr.db.Begin()
+	tx := cr.mysql.Begin()
 	//************* Sent Data toDB ******************
 	for idStore, product_InStore := range cartOrder {
 		cartOrderDB := models.CartOrderDB{
@@ -303,7 +256,7 @@ func (cr *cart_repository) CreateCart_Repo_V2(cartOrder map[int][]models.Product
 func (cr *cart_repository) CheckStock(idProduct, quantity int, status string) error {
 	if status == "cut" {
 		product := models.Product{}
-		tx := cr.db.Table("myshop.products").Where("id_product=?", idProduct).Find(&product)
+		tx := cr.mysql.Table("myshop.products").Where("id_product=?", idProduct).Find(&product)
 		if tx.Error != nil {
 			return tx.Error
 		}
@@ -316,7 +269,7 @@ func (cr *cart_repository) CheckStock(idProduct, quantity int, status string) er
 		//  ตัดยอดตาม quantity
 		product.Quantity = product.Quantity - quantity
 		// save product after cut stock
-		tx = cr.db.Table("myshop.products").Where("id_product=?", product.IdProduct).Updates(&product)
+		tx = cr.mysql.Table("myshop.products").Where("id_product=?", product.IdProduct).Updates(&product)
 		if tx.Error != nil {
 			return errors.New("can not update prpduct after cut stock")
 		}
@@ -325,14 +278,14 @@ func (cr *cart_repository) CheckStock(idProduct, quantity int, status string) er
 	if status == "return" {
 		// เช็ค product
 		product := models.Product{}
-		tx := cr.db.Table("myshop.products").Where("id_product=?", idProduct).Find(&product)
+		tx := cr.mysql.Table("myshop.products").Where("id_product=?", idProduct).Find(&product)
 		if tx.Error != nil {
 			return tx.Error
 		}
 		// คืนค่า
 		product.Quantity = product.Quantity + quantity
 		// save product after cut stock
-		tx = cr.db.Table("myshop.products").Where("id_product=?", product.IdProduct).Updates(&product)
+		tx = cr.mysql.Table("myshop.products").Where("id_product=?", product.IdProduct).Updates(&product)
 		if tx.Error != nil {
 			return errors.New("can not update prpduct after cut stock")
 		}
@@ -347,13 +300,13 @@ func (cr *cart_repository) GetAllCartForStore_Repo(idStore int) (carts_Store []m
 
 	// ดึง cart ที่เวลา create เกิน 31 นาที **
 	// ปัญหาต่อมา อถ้าข้ามวัน มันจะไม่ดึงข้อมูลขึ้นมา
-	tx := cr.db.Table("carts").Raw("SELECT * FROM carts WHERE timestampadd(minute, 30,created_at) - Now() < 0  AND id_store = ?", idStore).Scan(&carts_Store)
+	tx := cr.mysql.Table("carts").Raw("SELECT * FROM carts WHERE timestampadd(minute, 30,created_at) - Now() < 0  AND id_store = ?", idStore).Scan(&carts_Store)
 	if tx.Error != nil {
 		return []models.CartOrderDB{}, []models.CartItemDB{}, tx.Error
 	}
 
 	// ดึง cartItems ที่เวลา create เกิน 31 นาที **
-	tx = cr.db.Table("cart_items").Raw("SELECT * FROM cart_items WHERE timestampadd(minute, 30,created_at) - Now() < 0  AND id_store = ?", idStore).Scan(&carItemst_Store)
+	tx = cr.mysql.Table("cart_items").Raw("SELECT * FROM cart_items WHERE timestampadd(minute, 30,created_at) - Now() < 0  AND id_store = ?", idStore).Scan(&carItemst_Store)
 	if tx.Error != nil {
 		return []models.CartOrderDB{}, []models.CartItemDB{}, tx.Error
 	}
@@ -364,11 +317,11 @@ func (cr *cart_repository) GetAllCartForStore_Repo(idStore int) (carts_Store []m
 // GetCart_Repo implements ICart_Repositiry
 // Get All For User
 func (cr *cart_repository) GetAllCartForUser_Repo(idUser int) (carts_User []models.CartOrderDB, carItemst_User []models.CartItemDB, err error) {
-	tx := cr.db.Table("myshop.carts").Where("id_user=?", idUser).Find(&carts_User)
+	tx := cr.mysql.Table("myshop.carts").Where("id_user=?", idUser).Find(&carts_User)
 	if tx.Error != nil {
 		return []models.CartOrderDB{}, []models.CartItemDB{}, tx.Error
 	}
-	tx = cr.db.Table("myshop.cart_items").Where("id_user=?", idUser).Find(&carItemst_User)
+	tx = cr.mysql.Table("myshop.cart_items").Where("id_user=?", idUser).Find(&carItemst_User)
 	if tx.Error != nil {
 		return []models.CartOrderDB{}, []models.CartItemDB{}, tx.Error
 	}
@@ -377,12 +330,12 @@ func (cr *cart_repository) GetAllCartForUser_Repo(idUser int) (carts_User []mode
 }
 
 func (cr *cart_repository) GetCartByIdForUser_Repo(idCart, idUser int) (cartItems []models.CartItemDB, err error) {
-	tx := cr.db.Table("myshop.cart_items").Where("id_user=?", idUser).Where("id_cart=?", idCart).Find(&cartItems)
+	tx := cr.mysql.Table("myshop.cart_items").Where("id_user=?", idUser).Where("id_cart=?", idCart).Find(&cartItems)
 	return cartItems, tx.Error
 }
 
 func (cr *cart_repository) GetCartByIdForStore_Repo(idCart, idStore int) (carItemst_Store []models.CartItemDB, err error) {
-	tx := cr.db.Table("myshop.cart_items").Where("id_store=?", idStore).Where("id_cart=?", idCart).Find(&carItemst_Store)
+	tx := cr.mysql.Table("myshop.cart_items").Where("id_store=?", idStore).Where("id_cart=?", idCart).Find(&carItemst_Store)
 	if tx.Error != nil {
 		return carItemst_Store, tx.Error
 	}
@@ -394,7 +347,7 @@ func (cr *cart_repository) GetCartByIdForStore_Repo(idCart, idStore int) (carIte
 func (cr *cart_repository) EditCartOrder_Repo(cartItems []models.CartItemDB) (err error) {
 	cartOrder := models.CartOrderDB{}
 	// เช้คว่ามี cart id ของเรารึป่าว
-	tx := cr.db.Table("myshop.carts").Where("id=?", cartItems[0].Id_cart).Where("id_user=?", cartItems[0].Id_User).First(&cartOrder)
+	tx := cr.mysql.Table("myshop.carts").Where("id=?", cartItems[0].Id_cart).Where("id_user=?", cartItems[0].Id_User).First(&cartOrder)
 	if tx.Error != nil {
 		return tx.Error // .First(&carts) ถึงจะได้ error record not found
 	}
@@ -436,7 +389,7 @@ func (cr *cart_repository) EditStatusCartOrder_Repo(idCart, idUser int, status *
 
 	// เช็คเวลา จะโชว์ order ที่ เกิน 30 นาที ขึ้นไป
 	// ให้ user ตัดสินใจ 30 นาทีก่อน
-	tx := cr.db.Table("carts").Raw("SELECT * FROM carts WHERE timestampadd(minute, 30,created_at) - Now() < 0 AND id_store = ? AND id=?", idUser, idCart).First(&cartDB)
+	tx := cr.mysql.Table("carts").Raw("SELECT * FROM carts WHERE timestampadd(minute, 30,created_at) - Now() < 0 AND id_store = ? AND id=?", idUser, idCart).First(&cartDB)
 	if tx.Error != nil {
 		return tx.Error // .First(&carts) ถึงจะได้ error record not found
 	}
@@ -444,7 +397,7 @@ func (cr *cart_repository) EditStatusCartOrder_Repo(idCart, idUser int, status *
 	cartDB.Status = status.Status
 
 	//save status
-	tx = cr.db.Table("carts").Save(&cartDB)
+	tx = cr.mysql.Table("carts").Save(&cartDB)
 	if tx.Error != nil {
 		fmt.Println(tx.Error.Error())
 		return tx.Error // .First(&carts) ถึงจะได้ error record not found
@@ -456,7 +409,7 @@ func (cr *cart_repository) EditStatusCartOrder_Repo(idCart, idUser int, status *
 func (cr *cart_repository) DeleteCart_Repo(idUser, idcart int) error {
 	// get idcart ออกมาก่อนว่ามีไหม
 	carts := []models.CartOrderDB{}
-	tx := cr.db.Table("myshop.carts").Where("id=?", idcart).Where("id_user=?", idUser).First(&carts)
+	tx := cr.mysql.Table("myshop.carts").Where("id=?", idcart).Where("id_user=?", idUser).First(&carts)
 	if tx.Error != nil {
 		return tx.Error // .First(&carts) ถึงจะได้ error record not found
 	}

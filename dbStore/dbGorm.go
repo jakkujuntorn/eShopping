@@ -9,6 +9,11 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+
+	"gorm.io/driver/postgres"
 )
 
 type Sqllogger struct {
@@ -16,8 +21,8 @@ type Sqllogger struct {
 }
 
 func (l Sqllogger) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
-sql,_ := fc()
-fmt.Printf("%v\n===================================================]\n",sql)
+	sql, _ := fc()
+	fmt.Printf("%v\n===================================================]\n", sql)
 }
 
 func DbGorm() *gorm.DB {
@@ -30,8 +35,6 @@ func DbGorm() *gorm.DB {
 		NowFunc: func() time.Time {
 			return time.Now().Local()
 		},
-		
-		
 	})
 	if err != nil {
 		panic("Db Can not connect")
@@ -44,4 +47,38 @@ func DbGorm() *gorm.DB {
 	// db.AutoMigrate(models.CartItem{})
 
 	return db
+}
+
+func Db_Init_mgo_v3_myshpoing() *mongo.Database {
+
+	db, errDB := mongo.Connect(context.Background(), options.Client().ApplyURI("mongodb://localhost:27017")) // ใช้ได้
+
+	if errDB != nil {
+		Error_message := fmt.Sprintf("Server Error : %v", errDB)
+		panic(Error_message)
+	}
+
+	db_Database := db.Database("myshop")
+	fmt.Println("Start MongoDB V3 .....")
+
+	return db_Database
+}
+
+func Postgres_init() *gorm.DB {
+	
+	dsn := "host=localhost user=postgres password=P@ssw0rd dbname=myshoping port=5432 sslmode=disable TimeZone=Asia/Bangkok"
+
+	dial := postgres.Open(dsn)
+
+	db_Postgr, err := gorm.Open(dial, &gorm.Config{
+		// Logger: &Sqllogger{},
+		// DryRun: true,
+	})
+
+	if err != nil {
+		fmt.Println("Postgre Error: ", err)
+		panic("Postgr Can not connect")
+	}
+
+	return db_Postgr
 }

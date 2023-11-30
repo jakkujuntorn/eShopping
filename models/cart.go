@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"gorm.io/gorm"
 )
 
@@ -28,10 +30,32 @@ type CartOrderDB struct {
 	gorm.Model
 }
 
+type CartOrderDB_Mongo struct {
+	Id_User  int       `json:"idUser" bson:"id_user" validate:"required"`
+	Id_Store int       `json:"idStore" bson:"id_store" validate:"required"`
+	Status   string    `json:"status" bson:"status" validate:"required"`
+	CreateAt time.Time `json:"create_at" bson:"create_at"`
+	UpdateAt time.Time `json:"update_at"bson:"update_at"`
+	DeleteAt time.Time `json:"delete_at" bson:"delete_at"`
+}
+
+type CartItemDB_Mongo struct {
+	Id_cart    string `json:"idCart"  db:"id_cart" validate:"required"` // id carrt เอามาจาก Cart  id ต้องรอให้สร้าง cart ก่อน
+	Id_Store   int `json:"idStore" db:"id_store"  validate:"required"`
+	Id_User    int `json:"idUser"  db:"id_user" validate:"required"`
+	Id_Product int `json:"idProduct" db:"id_product" validate:"required"`
+	Quantity   int `json:"quantity" db:"quantity" validate:"required"`
+	Price      int `json:"price" db:"price" validate:"required"`
+	CreateAt time.Time `json:"create_at" bson:"create_at"`
+	UpdateAt time.Time `json:"update_at"bson:"update_at"`
+	DeleteAt time.Time `json:"delete_at" bson:"delete_at"`
+}
+
 // ใส id_user ลงไปด้วย
 // เพราะ ตอนดึงจะดึงค่าตาม id_user ขึ้นมาทั้งหมด
 // แบ่ง cartitems ตาม id_cart ด้วย map([int]models.cartItems)
 type CartItemDB struct {
+	
 	Id_cart    int `json:"idCart"  db:"id_cart" validate:"required"` // id carrt เอามาจาก Cart  id ต้องรอให้สร้าง cart ก่อน
 	Id_Store   int `json:"idStore" db:"id_store"  validate:"required"`
 	Id_User    int `json:"idUser"  db:"id_user" validate:"required"`
@@ -40,6 +64,19 @@ type CartItemDB struct {
 	Price      int `json:"price" db:"price" validate:"required"`
 	gorm.Model
 }
+
+type CartItem_Postgres struct {
+	ID int
+	Id_cart    int `json:"idCart"  db:"id_cart" validate:"required"` // id carrt เอามาจาก Cart  id ต้องรอให้สร้าง cart ก่อน
+	Id_Store   int `json:"idStore" db:"id_store"  validate:"required"`
+	Id_User    int `json:"idUser"  db:"id_user" validate:"required"`
+	Id_Product int `json:"idProduct" db:"id_product" validate:"required"`
+	Quantity   int `json:"quantity" db:"quantity" validate:"required"`
+	Price      int `json:"price" db:"price" validate:"required"`
+	gorm.Model
+}
+
+
 
 //*********** Resonse to font end
 // for user
@@ -55,7 +92,7 @@ type OrderCartDetail struct {
 	Status  string
 }
 
-// for store ไม่ใช้ และ 
+// for store ไม่ใช้ และ
 // type CartOrderResponse_Store struct {
 // 	Id_Store int `json:"idUser" db:"id_user" validate:"required"`
 // 	Order    []OrderCare_Store
@@ -69,5 +106,5 @@ type OrderCartDetail struct {
 // }
 
 type StatusCartUpdate struct {
-	Status   string `json:"status" db:"status" validate:"required"`
+	Status string `json:"status" db:"status" validate:"required"`
 }

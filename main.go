@@ -33,20 +33,23 @@ func init() {
 
 //producer
 func main() {
-	// uu, errU := uuid.NewUUID()
-	// if errU != nil {
-	// }
-	// fmt.Print(uu)
+	
 	ss := uuid.NewString()
 	fmt.Println(ss)
 
-	// ****** DB *******
-	db := dbstore.DbGorm()
-	// r := gin.Default()
+	// ************************************** DB ****************************
+	sqlClient := dbstore.DbGorm()
 
 	// ********  Redis *******
 	redisClient := initRedis()
 	_ = redisClient
+
+	// ***********  MongoDB ***********
+	monGoClient := dbstore.Db_Init_mgo_v3_myshpoing()
+	_ = monGoClient
+
+	postgresClient := dbstore.Postgres_init()
+	_ = postgresClient
 
 	//******* Kafka Producer ********
 	// producer, err := sarama.NewSyncProducer(viper.GetStringSlice("kafka.servers"), nil)
@@ -58,26 +61,27 @@ func main() {
 
 	// *******  User ใช้ Kafka ********
 	// ***************** User Handler *****************
-
 	// kffka
 	// handlerUser_Kafka := repository.NewUser_Repo_Kafka(producer)
 	// handlerService := service.NewUser_Service_Kafka(handlerUser_Kafka)
 	// NewUser_Handler_Kafka อยู่ใน handler ปกติ *******
 	// handlerHandler_Userk := handler.NewUser_Handler_Kafka(handlerService)
 
-	handlerRepoUser := repository.NewUser_Repository(db)
+	// **********************************   Handler  *********************************************
+	// ***********  User Handler ****************
+	handlerRepoUser := repository.NewUser_Repository(sqlClient)
 	handlerService := service.NewUser_Service(handlerRepoUser)
 	handlerHandler_User := handler.NewUser_Handler(handlerService)
 
 	// *************  Store Handler  **************
-	handlerRepo_Store := repository.NewStore_Repository(db)
+	handlerRepo_Store := repository.NewStore_Repository(sqlClient)
 	handlerService_Store := service.NewStore_Service(handlerRepo_Store)
 	handlerHandler_Store := handler.NewStore_Handler(handlerService_Store)
 
 	// *************** product ************
 	// product Fuc New ต่างๆจะส่ง pointer เข้ามา มันต่างกันยังไง
 	// REdis อยู่ layer นี้  - Getproduct กับ Search product
-	handlerRepo_Product := repository.NewProduct_Repository(db)
+	handlerRepo_Product := repository.NewProduct_Repository(sqlClient)
 	// handlerService_Product := service.NewProduct_Service(&handlerRepo_Product)
 	// handlerHandler_Product := handler.NewProduct_Handler(&handlerService_Product)
 
@@ -87,7 +91,7 @@ func main() {
 	handlerHandler_Product := handler.NewProduct_Handler_redis(&handlerService_Product)
 
 	// ************* Cart Handler  ***********
-	handlerRepo_Cart := repository.NewCart_Repo(db)
+	handlerRepo_Cart := repository.NewCart_Repo(sqlClient, monGoClient, postgresClient)
 	handlerService_Cart := service.NewCart_Service(handlerRepo_Cart)
 	handlerHandler_Cart := handler.NewCart_Handler(handlerService_Cart)
 
