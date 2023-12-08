@@ -1,82 +1,82 @@
 package repository
 
 import (
-	"context"
-	"errors"
-	"fmt"
+	// "context"
+	// "errors"
+	// "fmt"
 	"myShopEcommerce/models"
-	"time"
+	// "time"
 
-	"go.mongodb.org/mongo-driver/mongo"
+
 )
 
 // ****************** Mongo *******************
 // Create cart
 func (cr *cart_repository) CreateCart_Repo_Mongo(cartOrder map[int][]models.Product_CartItem, idUser int) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// defer cancel()
 
-	// ********** Transaction ************
-	sess, err := cr.monGo.Client().StartSession()
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
+	// // ********** Transaction ************
+	// sess, err := cr.monGo.Client().StartSession()
+	// if err != nil {
+	// 	fmt.Println(err)
+	// 	return err
+	// }
 
-	defer sess.EndSession(ctx)
+	// defer sess.EndSession(ctx)
 
-	// err = sess.StartTransaction(options.Transaction().SetWriteConcern(writeconcern.New(writeconcern.WMajority())))
-	err = sess.StartTransaction()
-	if err != nil {
-		fmt.Println("StartTransaction:", err.Error())
-		return err
-	}
+	// // err = sess.StartTransaction(options.Transaction().SetWriteConcern(writeconcern.New(writeconcern.WMajority())))
+	// err = sess.StartTransaction()
+	// if err != nil {
+	// 	fmt.Println("StartTransaction:", err.Error())
+	// 	return err
+	// }
 
-	myShopdatabase := sess.Client().Database("myshop")
+	// myShopdatabase := sess.Client().Database("myshop")
 
-	errUseSession := sess.Client().UseSession(ctx, func(sc mongo.SessionContext) error {
+	// errUseSession := sess.Client().UseSession(ctx, func(sc mongo.SessionContext) error {
 
-		cartOrderDB := models.CartOrderDB_Mongo{
-			Id_User:  idUser,
-			Id_Store: idUser, // คือค่า key value ของ map (cartOrder)
-			Status:   "pending",
-			CreateAt: time.Now().Add(7 * time.Hour),
-			UpdateAt: time.Now().Add(7 * time.Hour),
-		}
+	// 	cartOrderDB := models.CartOrderDB_Mongo{
+	// 		Id_User:  idUser,
+	// 		Id_Store: idUser, // คือค่า key value ของ map (cartOrder)
+	// 		Status:   "pending",
+	// 		CreateAt: time.Now().Add(7 * time.Hour),
+	// 		UpdateAt: time.Now().Add(7 * time.Hour),
+	// 	}
 
-		// _, err = cr.monGo.Collection("carts").InsertOne(ctx, cartOrderDB)
-		_, err = myShopdatabase.Collection("carts").InsertOne(ctx, cartOrderDB)
-		if err != nil {
-			fmt.Println("InsertOne:", err.Error())
-			// Something went wrong, abort the transaction
-			_ = sess.AbortTransaction(ctx)
-			return err
-		}
+	// 	// _, err = cr.monGo.Collection("carts").InsertOne(ctx, cartOrderDB)
+	// 	_, err = myShopdatabase.Collection("carts").InsertOne(ctx, cartOrderDB)
+	// 	if err != nil {
+	// 		fmt.Println("InsertOne:", err.Error())
+	// 		// Something went wrong, abort the transaction
+	// 		_ = sess.AbortTransaction(ctx)
+	// 		return err
+	// 	}
 
-		// Simulate an error for testing purposes
-		errInTransaction := errors.New("Error Test")
-		if errInTransaction != nil {
-			fmt.Println("Have Error:", errInTransaction.Error())
-			er := sess.AbortTransaction(ctx)
-			if er != nil {
-				fmt.Println("AbortTransaction :", er)
-			}
-			return errInTransaction
-		}
-		return nil
-	})
+	// 	// Simulate an error for testing purposes
+	// 	errInTransaction := errors.New("Error Test")
+	// 	if errInTransaction != nil {
+	// 		fmt.Println("Have Error:", errInTransaction.Error())
+	// 		er := sess.AbortTransaction(ctx)
+	// 		if er != nil {
+	// 			fmt.Println("AbortTransaction :", er)
+	// 		}
+	// 		return errInTransaction
+	// 	}
+	// 	return nil
+	// })
 
-	if errUseSession != nil {
-		return errUseSession
-	}
+	// if errUseSession != nil {
+	// 	return errUseSession
+	// }
 
-	// Everything went well, commit the transaction
-	if err := sess.CommitTransaction(ctx); err != nil {
-		fmt.Println("CommitTransaction:", err.Error())
-		return err
-	}
+	// // Everything went well, commit the transaction
+	// if err := sess.CommitTransaction(ctx); err != nil {
+	// 	fmt.Println("CommitTransaction:", err.Error())
+	// 	return err
+	// }
 
-	return nil
+	// return nil
 
 	// sess.CommitTransaction(ctx)
 

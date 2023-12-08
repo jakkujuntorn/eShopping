@@ -45,8 +45,8 @@ func main() {
 	_ = redisClient
 
 	// ***********  MongoDB ***********
-	monGoClient := dbstore.Db_Init_mgo_v3_myshpoing()
-	_ = monGoClient
+	// monGoClient := dbstore.Db_Init_mgo_v3_myshpoing()
+	// _ = monGoClient
 
 	postgresClient := dbstore.Postgres_init()
 	_ = postgresClient
@@ -91,7 +91,7 @@ func main() {
 	handlerHandler_Product := handler.NewProduct_Handler_redis(&handlerService_Product)
 
 	// ************* Cart Handler  ***********
-	handlerRepo_Cart := repository.NewCart_Repo(sqlClient, monGoClient, postgresClient)
+	handlerRepo_Cart := repository.NewCart_Repo(sqlClient, postgresClient)
 	handlerService_Cart := service.NewCart_Service(handlerRepo_Cart)
 	handlerHandler_Cart := handler.NewCart_Handler(handlerService_Cart)
 

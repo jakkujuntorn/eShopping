@@ -10,8 +10,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"gorm.io/driver/postgres"
 )
@@ -49,20 +47,20 @@ func DbGorm() *gorm.DB {
 	return db
 }
 
-func Db_Init_mgo_v3_myshpoing() *mongo.Database {
+// func Db_Init_mgo_v3_myshpoing() *mongo.Database {
 
-	db, errDB := mongo.Connect(context.Background(), options.Client().ApplyURI("mongodb://localhost:27017")) // ใช้ได้
+// 	db, errDB := mongo.Connect(context.Background(), options.Client().ApplyURI("mongodb://localhost:27017")) // ใช้ได้
 
-	if errDB != nil {
-		Error_message := fmt.Sprintf("Server Error : %v", errDB)
-		panic(Error_message)
-	}
+// 	if errDB != nil {
+// 		Error_message := fmt.Sprintf("Server Error : %v", errDB)
+// 		panic(Error_message)
+// 	}
 
-	db_Database := db.Database("myshop")
-	fmt.Println("Start MongoDB V3 .....")
+// 	db_Database := db.Database("myshop")
+// 	fmt.Println("Start MongoDB V3 .....")
 
-	return db_Database
-}
+// 	return db_Database
+// }
 
 func Postgres_init() *gorm.DB {
 	

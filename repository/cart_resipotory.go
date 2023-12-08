@@ -10,17 +10,11 @@ import (
 
 	"gorm.io/gorm"
 
-	_ "go.mongodb.org/mongo-driver/bson"
-	_ "go.mongodb.org/mongo-driver/bson/primitive"
-
-	"go.mongodb.org/mongo-driver/mongo"
-	// "go.mongodb.org/mongo-driver/mongo/options"
-	// "go.mongodb.org/mongo-driver/mongo/writeconcern"
 )
 
 type cart_repository struct {
 	mysql    *gorm.DB
-	monGo *mongo.Database
+	// monGo *mongo.Database
 	postgres *gorm.DB
 }
 
@@ -59,10 +53,10 @@ type ICart_Repositiry interface {
 	GetCartByIdForStore_Repo_Postgres(idcart, idStore int) (carItemst_Store []models.CartItemDB, err error)
 }
 
-func NewCart_Repo(mysql *gorm.DB, monGo *mongo.Database,postgres *gorm.DB) ICart_Repositiry {
+func NewCart_Repo(mysql *gorm.DB,postgres *gorm.DB) ICart_Repositiry {
 	return &cart_repository{
 		mysql:    mysql,
-		monGo: monGo,
+		// monGo: monGo,
 		postgres:postgres,
 	}
 }
