@@ -1,4 +1,0 @@
-API
-    -delete ยังไม่ได้ทำ มีแนวคิดแบบอื่น
-        -แนวคิด จะลบจริงใน carts และ cart_items และจะเอาข้อมูลที่ลบไปใสใน ฐานข้อมูลใหม่ (delete_carts, delete_cart+items)
-    -cart layer service จะเปลี่ยนไปใช้ postgresSQL สลับใช้ที่ service layer
