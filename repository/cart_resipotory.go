@@ -12,7 +12,7 @@ import (
 
 type cart_repository struct {
 	mysql *gorm.DB
-	// monGo *mongo.Database
+
 	postgres *gorm.DB
 }
 
