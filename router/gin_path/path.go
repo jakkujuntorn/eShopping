@@ -120,7 +120,7 @@ func GinRouter_User(handlerUser handler.IUser_Handler,
 		// Cancle Order by User
 		//จะทำได้เมื่ไม่เกิน 30 นาที หลัง create
 		// cartPath.PATCH("/cart/carteditstatusstore/:idcart", handlerCart.EditStatusCart_Handler)
-		cartPath.DELETE("/cart/deletecart/:idcart", handlerCart.DeleteCart_Handler)
+		cartPath.DELETE("/cart/deletecart/:idcart", handlerCart.DeleteCartForUser_Handler)
 
 	}
 

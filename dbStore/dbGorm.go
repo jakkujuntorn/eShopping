@@ -69,7 +69,7 @@ func Postgres_init() *gorm.DB {
 	dial := postgres.Open(dsn)
 
 	db_Postgr, err := gorm.Open(dial, &gorm.Config{
-		// Logger: &Sqllogger{},
+		Logger: &Sqllogger{},
 		// DryRun: true,
 	})
 

@@ -20,7 +20,7 @@ type ICart_Handler interface {
 	GetCartByUserTYpe_Handler(*gin.Context)
 	GetCartById_Handler(*gin.Context)
 	EditStatusCart_Handler(*gin.Context)
-	DeleteCart_Handler(*gin.Context)
+	DeleteCartForUser_Handler(*gin.Context)
 }
 
 func NewCart_Handler(cartService service.ICart_Service) ICart_Handler {
@@ -280,7 +280,7 @@ func (ch *cart_handler) EditStatusCart_Handler(c *gin.Context) {
 	})
 }
 
-func (ch *cart_handler) DeleteCart_Handler(c *gin.Context) {
+func (ch *cart_handler) DeleteCartForUser_Handler(c *gin.Context) {
 
 	// get Param
 	idCart, errGetParam := util.GetParam(c, "idcart")
@@ -295,7 +295,7 @@ func (ch *cart_handler) DeleteCart_Handler(c *gin.Context) {
 		return
 	}
 
-	errDelete := ch.cartService.DeleteCart_Service(idUser, idCart)
+	errDelete := ch.cartService.DeleteCartForUser_Service(idUser, idCart)
 	if errDelete != nil {
 		c.JSON(500, util.Error_Custom(500, errDelete.Error(), "handler_cart_deletecart_deletecart_servie"))
 		return

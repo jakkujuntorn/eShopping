@@ -1,7 +1,6 @@
 package repository
 
 import (
-	
 	"errors"
 	"fmt"
 
@@ -9,11 +8,10 @@ import (
 	"time"
 
 	"gorm.io/gorm"
-
 )
 
 type cart_repository struct {
-	mysql    *gorm.DB
+	mysql *gorm.DB
 	// monGo *mongo.Database
 	postgres *gorm.DB
 }
@@ -44,6 +42,7 @@ type ICart_Repositiry interface {
 	EditStatusCartOrder_Repo_Mongo(idCart, idUser int, status *models.StatusCartUpdate) (err error)
 
 	// ****************************  Postgres SQL  ***********************************
+	Transaction_Postgres(func(*cart_repository) error) error
 	CreateCart_Repo_Postgres(cartOrder map[int][]models.Product_CartItem, idUser int) error
 	EditCartOrder_Repo_Postgres(cartItemDB []models.CartItemDB) (err error)
 	EditStatusCartOrder_Repo_Postgres(idCart, idUser int, status *models.StatusCartUpdate) (err error)
@@ -51,20 +50,23 @@ type ICart_Repositiry interface {
 	GetAllCartForStore_Repo_Postgres(idStore int) (cartOrderDB []models.CartOrderDB, cartItemDB_Struct []models.CartItemDB, err error)
 	GetCartByIdForUser_Repo_Postgres(idcart, idUser int) (carItemst_User []models.CartItemDB, err error)
 	GetCartByIdForStore_Repo_Postgres(idcart, idStore int) (carItemst_Store []models.CartItemDB, err error)
+
+	CheckStock_Postgres(idProduct, quantity int, status string) (error)
+	ReStoreStock_Postgres(idProduct, quantity int) (error)
+	DeleteCartForUser_Repo_Postgres(idUser, idCart int) error
+	// Move_DeleteCart_Row([]models.Delete_carts,[]models.Delete_cart_items) error
 }
 
-func NewCart_Repo(mysql *gorm.DB,postgres *gorm.DB) ICart_Repositiry {
+func NewCart_Repo(mysql *gorm.DB, postgres *gorm.DB) *cart_repository {
 	return &cart_repository{
-		mysql:    mysql,
+		mysql: mysql,
 		// monGo: monGo,
-		postgres:postgres,
+		postgres: postgres,
 	}
 }
 
 var rollBack = make(chan string)
 var commit = make(chan string)
-
-
 
 // CreateCart_Repo implements ICart_Repositiry
 // การตัด stock ตวร อยู่ตรงนี้ เพราะเป็นจุดแรกที่เริ่มทำงานด้าน  cart

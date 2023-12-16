@@ -40,22 +40,21 @@ type CartOrderDB_Mongo struct {
 }
 
 type CartItemDB_Mongo struct {
-	Id_cart    string `json:"idCart"  db:"id_cart" validate:"required"` // id carrt เอามาจาก Cart  id ต้องรอให้สร้าง cart ก่อน
-	Id_Store   int `json:"idStore" db:"id_store"  validate:"required"`
-	Id_User    int `json:"idUser"  db:"id_user" validate:"required"`
-	Id_Product int `json:"idProduct" db:"id_product" validate:"required"`
-	Quantity   int `json:"quantity" db:"quantity" validate:"required"`
-	Price      int `json:"price" db:"price" validate:"required"`
-	CreateAt time.Time `json:"create_at" bson:"create_at"`
-	UpdateAt time.Time `json:"update_at"bson:"update_at"`
-	DeleteAt time.Time `json:"delete_at" bson:"delete_at"`
+	Id_cart    string    `json:"idCart"  db:"id_cart" validate:"required"` // id carrt เอามาจาก Cart  id ต้องรอให้สร้าง cart ก่อน
+	Id_Store   int       `json:"idStore" db:"id_store"  validate:"required"`
+	Id_User    int       `json:"idUser"  db:"id_user" validate:"required"`
+	Id_Product int       `json:"idProduct" db:"id_product" validate:"required"`
+	Quantity   int       `json:"quantity" db:"quantity" validate:"required"`
+	Price      int       `json:"price" db:"price" validate:"required"`
+	CreateAt   time.Time `json:"create_at" bson:"create_at"`
+	UpdateAt   time.Time `json:"update_at"bson:"update_at"`
+	DeleteAt   time.Time `json:"delete_at" bson:"delete_at"`
 }
 
 // ใส id_user ลงไปด้วย
 // เพราะ ตอนดึงจะดึงค่าตาม id_user ขึ้นมาทั้งหมด
 // แบ่ง cartitems ตาม id_cart ด้วย map([int]models.cartItems)
 type CartItemDB struct {
-	
 	Id_cart    int `json:"idCart"  db:"id_cart" validate:"required"` // id carrt เอามาจาก Cart  id ต้องรอให้สร้าง cart ก่อน
 	Id_Store   int `json:"idStore" db:"id_store"  validate:"required"`
 	Id_User    int `json:"idUser"  db:"id_user" validate:"required"`
@@ -66,7 +65,7 @@ type CartItemDB struct {
 }
 
 type CartItem_Postgres struct {
-	ID int
+	ID         int
 	Id_cart    int `json:"idCart"  db:"id_cart" validate:"required"` // id carrt เอามาจาก Cart  id ต้องรอให้สร้าง cart ก่อน
 	Id_Store   int `json:"idStore" db:"id_store"  validate:"required"`
 	Id_User    int `json:"idUser"  db:"id_user" validate:"required"`
@@ -76,7 +75,43 @@ type CartItem_Postgres struct {
 	gorm.Model
 }
 
+type Delete_GetCart_Postgres struct {
+	ID       int    `json:"id" `
+	Id_User  int    `json:"idUser"`
+	Id_Store int    `json:"idStore"`
+	Status   string `json:"status"`
+	gorm.Model
+}
 
+type Delete_GetCartItem_Postgres struct {
+	ID         int `json:"id" `
+	Id_cart    int `json:"idCart"  db:"id_cart" validate:"required"` // id carrt เอามาจาก Cart  id ต้องรอให้สร้าง cart ก่อน
+	Id_Store   int `json:"idStore" db:"id_store"  validate:"required"`
+	Id_User    int `json:"idUser"  db:"id_user" validate:"required"`
+	Id_Product int `json:"idProduct" db:"id_product" validate:"required"`
+	Quantity   int `json:"quantity" db:"quantity" validate:"required"`
+	Price      int `json:"price" db:"price" validate:"required"`
+	gorm.Model
+}
+
+type Delete_carts struct {
+	ID          int    `json:"id"`
+	Id_UserDel  int    ` db:"id_user_del"`
+	Id_StoreDel int    `json:"id_store_del" db:"id_store_del"`
+	StatusDel   string `json:"status_del" db:"status_del"`
+	gorm.Model
+}
+
+type Delete_cart_items struct {
+	ID         int
+	Id_cartDel    int `json:"id_cartDel" db:"id_cartDel"`
+	Id_StoreDel   int `json:"id_storeDel" db:"id_storeDel"`
+	Id_UserDel    int `json:"id_userDel" db:"id_userDel"`
+	Id_ProductDEl int `json:"id_productDel" db:"id_productDel"`
+	QuantityDel   int `json:"quantityDel" db:"quantityDel"`
+	PriceDel      int `json:"priceDel" db:"priceDel"`
+	gorm.Model
+}
 
 //*********** Resonse to font end
 // for user

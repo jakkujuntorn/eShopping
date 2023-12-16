@@ -23,7 +23,7 @@ type ICart_Service interface {
 	EditCartOrder_Service(idCart, idUser int, newData *models.CartRequest) error
 	EdiStatustCart_Service(idCart, idUser int, status *models.StatusCartUpdate) error
 
-	DeleteCart_Service(idUser, idCart int) error
+	DeleteCartForUser_Service(idUser, idCart int) error
 	ValidateData_serviice(dataValidate interface{}) error
 }
 
@@ -143,7 +143,6 @@ func (cs *cart_service) CreateCart_Service_V2(cartOrder map[int][]models.Product
 	//************ mySQL *************
 	// err := cs.cartRepo.CreateCart_Repo_V2(cartOrder, idUser)
 
-
 	// *************  Mongo ***************
 	// err := cs.cartRepo.CreateCart_Repo_Mongo(cartOrder, idUser)
 	// if err != nil {
@@ -166,7 +165,6 @@ func (cs *cart_service) GetCartById_Service(idParam, idUser int, path string) (c
 		// cart_ItemStore, errCartRepo := cs.cartRepo.GetCartByIdForStore_Repo(idParam, idUser)
 		// fmt.Println(len(cart_ItemStore))
 
-
 		// *****************************  postgres  ***********************
 		cart_ItemStore, errCartRepo := cs.cartRepo.GetCartByIdForStore_Repo_Postgres(idParam, idUser)
 
@@ -178,7 +176,7 @@ func (cs *cart_service) GetCartById_Service(idParam, idUser int, path string) (c
 			return []models.CartItemDB{}, errors.New("record not found")
 		}
 
-		return cart_ItemStore,nil
+		return cart_ItemStore, nil
 	}
 
 	if path == "cartuserbyid" {
@@ -193,7 +191,6 @@ func (cs *cart_service) GetCartById_Service(idParam, idUser int, path string) (c
 		if errCartOrder != nil {
 			return []models.CartItemDB{}, errCartOrder
 		}
-
 
 		if len(cart_ItemUser) == 0 {
 			return []models.CartItemDB{}, errors.New("record not found")
@@ -222,7 +219,6 @@ func (cs *cart_service) GetCartByUserType_Service(idUser int, path string) (*mod
 		if errCartRepo != nil {
 			return &catrResponse, errCartRepo
 		}
-
 
 		groupCart_Items := make(map[int][]models.CartItemDB)
 		// จัดกลุ่ม  cart_items
@@ -256,7 +252,6 @@ func (cs *cart_service) GetCartByUserType_Service(idUser int, path string) (*mod
 		// if errCartOrder != nil {
 		// 	return &catrResponse, errCartOrder
 		// }
-
 
 		// **************************  postgres  ******************************
 		cartOrderDB, cart_ItemUser, errCartOrder := cs.cartRepo.GetAllCartForUser_Repo_Postgres(idUser)
@@ -322,11 +317,19 @@ func (cs *cart_service) EdiStatustCart_Service(idCart, idUser int, status *model
 	return cs.cartRepo.EditStatusCartOrder_Repo_Postgres(idCart, idUser, status)
 }
 
-func (cs *cart_service) DeleteCart_Service(idUser, idCart int) error {
-	err := cs.cartRepo.DeleteCart_Repo(idUser, idCart)
+func (cs *cart_service) DeleteCartForUser_Service(idUser, idCart int) error {
+	// err := cs.cartRepo.DeleteCart_Repo(idUser, idCart)
+	// if err != nil {
+	// 	// fmt.Println(err.Error())
+	// 	return err
+	// }
+
+	// postgres **********************
+	err := cs.cartRepo.DeleteCartForUser_Repo_Postgres(idUser, idCart)
 	if err != nil {
-		// fmt.Println(err.Error())
+
 		return err
 	}
+
 	return nil
 }
