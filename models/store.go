@@ -7,7 +7,7 @@ import (
 type Store struct {
 	IdUser    string `db:"id_user" `
 	IdStore string  `db:"id_store" `
-	StoreName string `json:"storename" db:"store_name" validate:"required,notblank"`
+	StoreName string `json:"storename" db:"store_name" validate:"required,notblank" gorm:"unique"`
 
 	gorm.Model
 }

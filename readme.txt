@@ -10,6 +10,7 @@
     
 ********************************
 -สิ่งที่จะทำต่อ
+    -refactor code
     -ทำ unit test 
     -แก้ logic ที่ cart service (ให้ for ชั้นเดียว)
     -ใช้ kafka ตรง register หลังจาก register เสร็จให้ส่งเมล

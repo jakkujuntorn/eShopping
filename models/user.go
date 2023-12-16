@@ -7,7 +7,7 @@ import (
 
 type UserRequest struct {
 	Id          int    `json:"id"`
-	Username    string `db:"username" json:"username" validate:"required,notblank,haveSpace"`
+	Username    string `db:"username" json:"username" validate:"required,notblank,haveSpace" gorm:"unique"`
 	Password    string `db:"password" json:"password" validate:"required,notblank,haveSpace"`
 	Firstname   string `db:"firstname" json:"firstname" validate:"required,notblank"`
 	Lastname    string `db:"lastname" json:"lastname" validate:"required,notblank"`
