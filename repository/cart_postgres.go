@@ -5,11 +5,10 @@ import (
 	"fmt"
 
 	"myShopEcommerce/models"
-
 )
 
 func (cr *cart_repository) ReStoreStock_Postgres(idProduct, quantity int) error {
-
+	cr.mt.Lock()
 	// เช็ค product ******************
 	product := models.Product{}
 	tx := cr.mysql.Table("myshop.products").Where("id_product=?", idProduct).Find(&product)
@@ -30,12 +29,12 @@ func (cr *cart_repository) ReStoreStock_Postgres(idProduct, quantity int) error 
 	// if tx.Error != nil {
 	// 	return errors.New("can not update prpduct after cut stock")
 	// }
-
+	cr.mt.Unlock()
 	return nil
 }
 func (cr *cart_repository) CheckStock_Postgres(idProduct, quantity int, status string) error {
 	// txr := transation
-
+	cr.mt.Lock()
 	product := models.Product{}
 	tx := cr.mysql.Table("myshop.products").Where("id_product=?", idProduct).Find(&product)
 	if tx.Error != nil {
@@ -54,11 +53,12 @@ func (cr *cart_repository) CheckStock_Postgres(idProduct, quantity int, status s
 	if tx.Error != nil {
 		return errors.New("can not update prpduct after cut stock")
 	}
-
+	cr.mt.Unlock()
 	return nil
 }
 
 // Transaction for Postgres **********
+// ตรงนี้ที่ต้องใช้ struct เพราะ ต้องใช้ db
 func (cr *cart_repository) Transaction_Postgres(fn func(*cart_repository) error) error {
 	fmt.Println("")
 	dbPostgres := cr.postgres.Begin()

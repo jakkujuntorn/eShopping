@@ -6,7 +6,7 @@ import (
 
 	"myShopEcommerce/models"
 	"time"
-
+	"sync"
 	"gorm.io/gorm"
 )
 
@@ -14,6 +14,8 @@ type cart_repository struct {
 	mysql *gorm.DB
 
 	postgres *gorm.DB
+	
+	mt sync.Mutex
 }
 
 type ICart_Repositiry interface {
@@ -251,6 +253,7 @@ func (cr *cart_repository) CreateCart_Repo_V2(cartOrder map[int][]models.Product
 
 func (cr *cart_repository) CheckStock(idProduct, quantity int, status string) error {
 	if status == "cut" {
+		cr.mt.Lock()
 		product := models.Product{}
 		tx := cr.mysql.Table("myshop.products").Where("id_product=?", idProduct).Find(&product)
 		if tx.Error != nil {
@@ -269,9 +272,11 @@ func (cr *cart_repository) CheckStock(idProduct, quantity int, status string) er
 		if tx.Error != nil {
 			return errors.New("can not update prpduct after cut stock")
 		}
+		cr.mt.Unlock()
 	}
 
 	if status == "return" {
+		cr.mt.Lock()
 		// เช็ค product
 		product := models.Product{}
 		tx := cr.mysql.Table("myshop.products").Where("id_product=?", idProduct).Find(&product)
@@ -285,6 +290,7 @@ func (cr *cart_repository) CheckStock(idProduct, quantity int, status string) er
 		if tx.Error != nil {
 			return errors.New("can not update prpduct after cut stock")
 		}
+		cr.mt.Unlock()
 	}
 
 	return nil
